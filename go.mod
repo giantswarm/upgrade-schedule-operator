@@ -12,7 +12,8 @@ require (
 )
 
 replace (
-	// Required to replace version with vulnerabilities.
 	github.com/coreos/etcd v3.3.10+incompatible => github.com/coreos/etcd v3.3.24+incompatible
+	github.com/coreos/etcd v3.3.13+incompatible => github.com/coreos/etcd v3.3.24+incompatible
 	github.com/gorilla/websocket v1.4.0 => github.com/gorilla/websocket v1.4.2
+	golang/github.com/dgrijalva/jwt-go v3.2.0+incompatible => golang/github.com/dgrijalva/jwt-go v4.0.0-preview1+incompatible
 )
