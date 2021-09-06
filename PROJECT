@@ -1,0 +1,6 @@
+domain: giantswarm
+layout:
+- go.kubebuilder.io/v3
+projectName: upgrade-schedule-operator
+repo: github.com/giantswarm/upgrade-schedule-operator
+version: "3"
