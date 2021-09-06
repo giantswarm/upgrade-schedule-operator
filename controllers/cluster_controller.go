@@ -19,7 +19,10 @@ package controllers
 import (
 	"context"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
+	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -46,6 +49,24 @@ type ClusterReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
+
+	// Fetch the Cluster instance.
+	cluster := &clusterv1.Cluster{}
+	if err := r.Client.Get(ctx, req.NamespacedName, cluster); err != nil {
+		if apierrors.IsNotFound(err) {
+			// Object not found, return.  Created objects are automatically garbage collected.
+			// For additional cleanup logic use finalizers.
+			return ctrl.Result{}, nil
+		}
+
+		// Error reading the object - requeue the request.
+		return ctrl.Result{}, err
+	}
+
+	// Return early if the object or Cluster is paused.
+	if annotations.IsPaused(cluster, cluster) {
+		return ctrl.Result{}, nil
+	}
 
 	// your logic here
 
