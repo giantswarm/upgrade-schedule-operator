@@ -1,3 +1,16 @@
 module github.com/giantswarm/upgrade-schedule-operator
 
-go 1.14
+go 1.16
+
+require (
+	k8s.io/apimachinery v0.22.1
+	k8s.io/client-go v0.22.1
+	sigs.k8s.io/cluster-api v0.3.22
+	sigs.k8s.io/controller-runtime v0.10.0
+)
+
+replace (
+	github.com/coreos/etcd => github.com/coreos/etcd v3.3.24+incompatible
+	github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt v3.2.1+incompatible
+	github.com/gorilla/websocket v1.4.0 => github.com/gorilla/websocket v1.4.2
+)

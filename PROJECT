@@ -1,0 +1,12 @@
+domain: giantswarm
+layout:
+- go.kubebuilder.io/v3
+projectName: upgrade-schedule-operator
+repo: github.com/giantswarm/upgrade-schedule-operator
+resources:
+- controller: true
+  domain: giantswarm
+  group: cluster.x-k8s.io
+  kind: Cluster
+  version: v1alpha3
+version: "3"
