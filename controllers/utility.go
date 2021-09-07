@@ -29,5 +29,5 @@ func upgradeApplied(targetVersion semver.Version, currentVersion semver.Version)
 }
 
 func upgradeTimeReached(upgradeTime time.Time) bool {
-	return upgradeTime.Before(time.Now())
+	return upgradeTime.After(time.Now())
 }

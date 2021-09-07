@@ -124,6 +124,7 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 	}
 
 	// Apply the upgrade
+	r.Log.Info(fmt.Sprintf("The cluster will be upgraded from version %v to %v.", currentVersion, targetVersion))
 	cluster.Labels[label.ReleaseVersion] = getClusterUpgradeVersionAnnotation(cluster)
 	err = r.Client.Update(ctx, cluster)
 	if err != nil {
