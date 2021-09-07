@@ -18,19 +18,25 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"time"
 
+	"github.com/blang/semver"
+	"github.com/giantswarm/apiextensions/v3/pkg/annotation"
+	"github.com/giantswarm/apiextensions/v3/pkg/label"
+	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	client.Client
+	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
@@ -48,7 +54,7 @@ type ClusterReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	_ = r.Log.WithValues("cluster", req.NamespacedName)
 
 	// Fetch the Cluster instance.
 	cluster := &clusterv1.Cluster{}
@@ -63,12 +69,66 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	// Return early if the object or Cluster is paused.
+	// Return if the Cluster is paused.
 	if annotations.IsPaused(cluster, cluster) {
+		r.Log.Info("The cluster is paused.")
 		return ctrl.Result{}, nil
 	}
 
-	// your logic here
+	// Return if the Cluster is deleted.
+	if !cluster.DeletionTimestamp.IsZero() {
+		r.Log.Info("The cluster is deleted.")
+		return ctrl.Result{}, nil
+	}
+
+	// Return if there is no upgrade time scheduled.
+	if getClusterUpgradeTimeAnnotation(cluster) == "" {
+		r.Log.Info("The cluster has no upgrade scheduled.")
+		return ctrl.Result{}, nil
+	}
+
+	// Return if the upgrade release version is not specified.
+	if getClusterUpgradeVersionAnnotation(cluster) == "" {
+		r.Log.Info("The scheduled update at %v can not proceed because no target release version has been set via annotation %v.", getClusterUpgradeTimeAnnotation(cluster), annotation.AWSUpdateScheduleTargetRelease)
+		return ctrl.Result{}, nil
+	}
+
+	return r.ReconcileUpgrade(ctx, cluster)
+}
+
+func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clusterv1.Cluster) (ctrl.Result, error) {
+	upgradeTime, err := time.Parse(time.RFC822, getClusterUpgradeTimeAnnotation(cluster))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Return if the scheduled upgrade time is not reached yet.
+	if !upgradeTimeReached(upgradeTime) {
+		r.Log.Info(fmt.Sprintf("The scheduled update time is not reached yet. Cluster will be upgraded at %v.", upgradeTime))
+		return ctrl.Result{}, nil
+	}
+
+	currentVersion, err := semver.New(getClusterReleaseVersionLabel(cluster))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	targetVersion, err := semver.New(getClusterUpgradeVersionAnnotation(cluster))
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// Return if the upgrade to the target release has already been performed.
+	if upgradeApplied(*targetVersion, *currentVersion) {
+		r.Log.Info(fmt.Sprintf("The upgrade target version %v has already been applied. The current release version is %v.", targetVersion, currentVersion))
+		return ctrl.Result{}, nil
+	}
+
+	// Apply the upgrade
+	cluster.Labels[label.ReleaseVersion] = getClusterUpgradeVersionAnnotation(cluster)
+	err = r.Client.Update(ctx, cluster)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -76,7 +136,6 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 // SetupWithManager sets up the controller with the Manager.
 func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
-		// For().
+		For(&clusterv1.Cluster{}).
 		Complete(r)
 }
