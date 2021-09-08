@@ -1,0 +1,9 @@
+name: upgrade-schedule-operator
+version: [[ .Version ]]
+description: "Operator for managing scheduled updates for a cluster"
+appVersion: "[[ .AppVersion ]]"
+home: "https://github.com/giantswarm/upgrade-schedule-operator"
+apiVersion: v1
+annotations:
+  application.giantswarm.io/team: "firecracker"
+  config.giantswarm.io/version: 1.x.x
