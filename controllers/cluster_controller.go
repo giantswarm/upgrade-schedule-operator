@@ -89,7 +89,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// Return if the upgrade release version is not specified.
 	if getClusterUpgradeVersionAnnotation(cluster) == "" {
-		log.Info("The scheduled update at %v can not proceed because no target release version has been set via annotation %v.", getClusterUpgradeTimeAnnotation(cluster), annotation.UpdateScheduleTargetRelease)
+		log.Info(fmt.Sprintf("The scheduled update at %v can not proceed because no target release version has been set via annotation %v.", getClusterUpgradeTimeAnnotation(cluster), annotation.UpdateScheduleTargetRelease))
 		return defaultRequeue(), nil
 	}
 	return r.ReconcileUpgrade(ctx, cluster, log)
