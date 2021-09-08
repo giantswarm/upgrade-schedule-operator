@@ -1,0 +1,14 @@
+project:
+  branch: "[[ .Branch ]]"
+  commit: "[[ .SHA ]]"
+image:
+  name: "giantswarm/upgrade-schedule-operator"
+  tag: "[[ .Version ]]"
+registry:
+  domain: docker.io
+
+pod:
+  user:
+    id: 1000
+  group:
+    id: 1000
