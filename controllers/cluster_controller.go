@@ -54,7 +54,7 @@ type ClusterReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = r.Log.WithValues("cluster", req.NamespacedName)
+	log := r.Log.WithValues("cluster", req.NamespacedName)
 
 	// Fetch the Cluster instance.
 	cluster := &clusterv1.Cluster{}
@@ -71,67 +71,73 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// Return if the Cluster is paused.
 	if annotations.IsPaused(cluster, cluster) {
-		r.Log.Info("The cluster is paused.")
-		return ctrl.Result{}, nil
+		log.Info("The cluster is paused.")
+		return defaultRequeue(), nil
 	}
 
 	// Return if the Cluster is deleted.
 	if !cluster.DeletionTimestamp.IsZero() {
-		r.Log.Info("The cluster is deleted.")
+		log.Info("The cluster is deleted.")
 		return ctrl.Result{}, nil
 	}
 
 	// Return if there is no upgrade time scheduled.
 	if getClusterUpgradeTimeAnnotation(cluster) == "" {
-		r.Log.Info("The cluster has no upgrade scheduled.")
-		return ctrl.Result{}, nil
+		log.Info("The cluster has no upgrade scheduled.")
+		return defaultRequeue(), nil
 	}
 
 	// Return if the upgrade release version is not specified.
 	if getClusterUpgradeVersionAnnotation(cluster) == "" {
-		r.Log.Info("The scheduled update at %v can not proceed because no target release version has been set via annotation %v.", getClusterUpgradeTimeAnnotation(cluster), annotation.AWSUpdateScheduleTargetRelease)
-		return ctrl.Result{}, nil
+		log.Info("The scheduled update at %v can not proceed because no target release version has been set via annotation %v.", getClusterUpgradeTimeAnnotation(cluster), annotation.UpdateScheduleTargetRelease)
+		return defaultRequeue(), nil
 	}
-
-	return r.ReconcileUpgrade(ctx, cluster)
+	return r.ReconcileUpgrade(ctx, cluster, log)
 }
 
-func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clusterv1.Cluster) (ctrl.Result, error) {
+func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clusterv1.Cluster, log logr.Logger) (ctrl.Result, error) {
 	upgradeTime, err := time.Parse(time.RFC822, getClusterUpgradeTimeAnnotation(cluster))
 	if err != nil {
+		log.Error(err, fmt.Sprintf("Failed to parse cluster upgrade time annotation %v. The value has to be in RFC822 Format. e.g. 30 Jan 21 15:04 MST", getClusterUpgradeTimeAnnotation(cluster)))
 		return ctrl.Result{}, err
 	}
 
 	// Return if the scheduled upgrade time is not reached yet.
 	if !upgradeTimeReached(upgradeTime) {
-		r.Log.Info(fmt.Sprintf("The scheduled update time is not reached yet. Cluster will be upgraded at %v.", upgradeTime))
-		return ctrl.Result{}, nil
+		log.Info(fmt.Sprintf("The scheduled update time is not reached yet. Cluster will be upgraded at %v.", upgradeTime))
+		return timedRequeue(upgradeTime), nil
 	}
 
 	currentVersion, err := semver.New(getClusterReleaseVersionLabel(cluster))
 	if err != nil {
+		log.Error(err, "Failed to parse current cluster releawse version label.")
 		return ctrl.Result{}, err
 	}
 	targetVersion, err := semver.New(getClusterUpgradeVersionAnnotation(cluster))
 	if err != nil {
+		log.Error(err, fmt.Sprintf("Failed to parse cluster upgrade target version annotation %v. The value has to be only the desired release version, e.g 15.2.1.", getClusterUpgradeVersionAnnotation(cluster)))
 		return ctrl.Result{}, err
 	}
 
 	// Return if the upgrade to the target release has already been performed.
 	if upgradeApplied(*targetVersion, *currentVersion) {
-		r.Log.Info(fmt.Sprintf("The upgrade target version %v has already been applied. The current release version is %v.", targetVersion, currentVersion))
-		return ctrl.Result{}, nil
+		log.Info(fmt.Sprintf("The upgrade to target version %v has already been applied. The current release version is %v.", targetVersion, currentVersion))
+		return defaultRequeue(), nil
 	}
 
-	// Apply the upgrade
-	r.Log.Info(fmt.Sprintf("The cluster will be upgraded from version %v to %v.", currentVersion, targetVersion))
+	// Apply the upgrade and remove annotations
+	log.Info(fmt.Sprintf("The cluster will be upgraded from version %v to %v.", currentVersion, targetVersion))
 	cluster.Labels[label.ReleaseVersion] = getClusterUpgradeVersionAnnotation(cluster)
+	delete(cluster.Annotations, annotation.UpdateScheduleTargetTime)
+	delete(cluster.Annotations, annotation.UpdateScheduleTargetRelease)
 	err = r.Client.Update(ctx, cluster)
 	if err != nil {
+		log.Error(err, "Failed to update Release version tag and remove scheduled upgrade annotations.")
 		return ctrl.Result{}, err
 	}
+	log.Info(fmt.Sprintf("The cluster CR was upgraded from version %v to %v.", currentVersion, targetVersion))
 
-	return ctrl.Result{}, nil
+	return defaultRequeue(), nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
