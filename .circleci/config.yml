@@ -51,7 +51,6 @@ workflows:
             tags:
               only: /^v.*/
 
-
       - architect/push-to-app-catalog:
           context: "architect"
           name: push-upgrade-schedule-operator-to-app-catalog
