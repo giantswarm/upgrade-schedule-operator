@@ -104,7 +104,7 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 
 	// Return if the scheduled upgrade time is not reached yet.
 	if !upgradeTimeReached(upgradeTime) {
-		log.Info(fmt.Sprintf("The scheduled update time is not reached yet. Cluster will be upgraded in %v at %v.", time.Until(upgradeTime), upgradeTime))
+		log.Info(fmt.Sprintf("The scheduled update time is not reached yet. Cluster will be upgraded in %v at %v.", time.Until(upgradeTime).Round(time.Minute), upgradeTime))
 		return timedRequeue(upgradeTime), nil
 	}
 
