@@ -38,7 +38,13 @@ rules:
   resources:
     - events
   verbs:
-    - create
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
 - apiGroups:
   - coordination.k8s.io
   resources:

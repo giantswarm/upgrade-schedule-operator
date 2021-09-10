@@ -11,6 +11,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+const ClusterUpgradeAnnouncement = "alpha.giantswarm.io/update-schedule-upgrade-announcement"
+
 func defaultRequeue() reconcile.Result {
 	return ctrl.Result{
 		Requeue:      true,
@@ -19,12 +21,12 @@ func defaultRequeue() reconcile.Result {
 }
 
 func timedRequeue(upgradeTime time.Time) reconcile.Result {
-	if time.Until(upgradeTime) > 5*time.Minute {
+	if upgradeTime.Sub(time.Now().UTC()) > 5*time.Minute {
 		return defaultRequeue()
 	}
 	return ctrl.Result{
 		Requeue:      true,
-		RequeueAfter: time.Until(upgradeTime) + time.Second,
+		RequeueAfter: upgradeTime.Sub(time.Now().UTC()) + time.Second,
 	}
 }
 
@@ -48,5 +50,19 @@ func upgradeApplied(targetVersion semver.Version, currentVersion semver.Version)
 }
 
 func upgradeTimeReached(upgradeTime time.Time) bool {
-	return upgradeTime.Before(time.Now())
+	return upgradeTime.Before(time.Now().UTC())
+}
+
+func upgradeAnnouncementTimeReached(upgradeTime time.Time) bool {
+	return upgradeTime.Add(-15 * time.Minute).Before(time.Now().UTC())
+}
+
+func outOfOffice(upgradeTime time.Time) bool {
+	if upgradeTime.Day() == 6 || upgradeTime.Day() == 7 {
+		return true
+	}
+	if upgradeTime.UTC().Hour() <= 7 && upgradeTime.UTC().Hour() >= 16 {
+		return true
+	}
+	return false
 }

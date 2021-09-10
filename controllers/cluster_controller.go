@@ -25,8 +25,11 @@ import (
 	"github.com/giantswarm/apiextensions/v3/pkg/annotation"
 	"github.com/giantswarm/apiextensions/v3/pkg/label"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
 	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -38,6 +41,8 @@ type ClusterReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
+
+	recorder record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
@@ -102,9 +107,34 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 		return ctrl.Result{}, err
 	}
 
+	// Send scheduled cluster upgrade announcement.
+	if _, exists := cluster.Annotations[ClusterUpgradeAnnouncement]; !exists {
+		if upgradeAnnouncementTimeReached(upgradeTime) {
+			cluster.Annotations[ClusterUpgradeAnnouncement] = "true"
+			err = r.Client.Update(ctx, cluster)
+			if err != nil {
+				log.Error(err, "Failed to set upgrade announcement annotation.")
+				return ctrl.Result{}, err
+			}
+			log.Info("Sending cluster upgrade announcement event.")
+
+			msg := fmt.Sprintf("The cluster %s/%s upgrade from release version %v to %v is scheduled to start in %v.",
+				cluster.Namespace,
+				cluster.Name,
+				getClusterReleaseVersionLabel(cluster),
+				getClusterUpgradeVersionAnnotation(cluster),
+				upgradeTime.Sub(time.Now().UTC()).Round(time.Minute),
+			)
+			if outOfOffice(upgradeTime) {
+				msg += "Please contact us via urgent@giantswarm.io in case of annormalies."
+			}
+			r.sendClusterUpgradeEvent(cluster, msg)
+		}
+	}
+
 	// Return if the scheduled upgrade time is not reached yet.
 	if !upgradeTimeReached(upgradeTime) {
-		log.Info(fmt.Sprintf("The scheduled update time is not reached yet. Cluster will be upgraded in %v at %v.", time.Until(upgradeTime).Round(time.Minute), upgradeTime))
+		log.Info(fmt.Sprintf("The scheduled update time is not reached yet. Cluster will be upgraded in %v at %v.", upgradeTime.Sub(time.Now().UTC()).Round(time.Minute), upgradeTime))
 		return timedRequeue(upgradeTime), nil
 	}
 
@@ -130,6 +160,7 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 	cluster.Labels[label.ReleaseVersion] = getClusterUpgradeVersionAnnotation(cluster)
 	delete(cluster.Annotations, annotation.UpdateScheduleTargetTime)
 	delete(cluster.Annotations, annotation.UpdateScheduleTargetRelease)
+	delete(cluster.Annotations, ClusterUpgradeAnnouncement)
 	err = r.Client.Update(ctx, cluster)
 	if err != nil {
 		log.Error(err, "Failed to update Release version tag and remove scheduled upgrade annotations.")
@@ -142,7 +173,17 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
+	err := ctrl.NewControllerManagedBy(mgr).
 		For(&clusterv1.Cluster{}).
 		Complete(r)
+	if err != nil {
+		return errors.Wrap(err, "failed setting up with a controller manager")
+	}
+
+	r.recorder = mgr.GetEventRecorderFor("cluster-controller")
+	return nil
+}
+
+func (r *ClusterReconciler) sendClusterUpgradeEvent(cluster *clusterv1.Cluster, message string) {
+	r.recorder.Eventf(cluster, corev1.EventTypeNormal, "ClusterUpgradeAnnouncement", message)
 }
