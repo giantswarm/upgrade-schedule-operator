@@ -6,8 +6,8 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/giantswarm/apiextensions/v3 v3.32.1-0.20210908083826-6fdda5406dde
 	github.com/go-logr/logr v0.4.0
-	github.com/pkg/errors v0.9.1 // indirect
-	k8s.io/api v0.22.1 // indirect
+	github.com/pkg/errors v0.9.1
+	k8s.io/api v0.22.1
 	k8s.io/apimachinery v0.22.1
 	k8s.io/client-go v0.22.1
 	sigs.k8s.io/cluster-api v0.3.22
