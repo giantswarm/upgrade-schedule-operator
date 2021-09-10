@@ -19,12 +19,12 @@ func defaultRequeue() reconcile.Result {
 }
 
 func timedRequeue(upgradeTime time.Time) reconcile.Result {
-	if upgradeTime.Sub(time.Now().In(upgradeTime.Location())) > 5*time.Minute {
+	if time.Until(upgradeTime) > 5*time.Minute {
 		return defaultRequeue()
 	}
 	return ctrl.Result{
 		Requeue:      true,
-		RequeueAfter: upgradeTime.Sub(time.Now().In(upgradeTime.Location())) + time.Second,
+		RequeueAfter: time.Until(upgradeTime) + time.Second,
 	}
 }
 
@@ -48,5 +48,5 @@ func upgradeApplied(targetVersion semver.Version, currentVersion semver.Version)
 }
 
 func upgradeTimeReached(upgradeTime time.Time) bool {
-	return upgradeTime.Before(time.Now().In(upgradeTime.Location()))
+	return upgradeTime.After(time.Now())
 }

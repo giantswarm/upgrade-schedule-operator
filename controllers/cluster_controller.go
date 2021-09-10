@@ -98,13 +98,13 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clusterv1.Cluster, log logr.Logger) (ctrl.Result, error) {
 	upgradeTime, err := time.Parse(time.RFC822, getClusterUpgradeTimeAnnotation(cluster))
 	if err != nil {
-		log.Error(err, fmt.Sprintf("Failed to parse cluster upgrade time annotation %v. The value has to be in RFC822 Format. e.g. 30 Jan 21 15:04 MST", getClusterUpgradeTimeAnnotation(cluster)))
+		log.Error(err, fmt.Sprintf("Failed to parse cluster upgrade time annotation %v. The value has to be in RFC822 Format and UTC time zone. e.g. 30 Jan 21 15:04 UTC", getClusterUpgradeTimeAnnotation(cluster)))
 		return ctrl.Result{}, err
 	}
 
 	// Return if the scheduled upgrade time is not reached yet.
 	if !upgradeTimeReached(upgradeTime) {
-		log.Info(fmt.Sprintf("The scheduled update time is not reached yet. Cluster will be upgraded in %v at %v.", upgradeTime.Sub(time.Now().In(upgradeTime.Location())).Round(time.Minute), upgradeTime))
+		log.Info(fmt.Sprintf("The scheduled update time is not reached yet. Cluster will be upgraded in %v at %v.", time.Until(upgradeTime).Round(time.Minute), upgradeTime))
 		return timedRequeue(upgradeTime), nil
 	}
 
