@@ -56,3 +56,13 @@ func upgradeTimeReached(upgradeTime time.Time) bool {
 func upgradeAnnouncementTimeReached(upgradeTime time.Time) bool {
 	return upgradeTime.Add(-15 * time.Minute).Before(time.Now().UTC())
 }
+
+func outOfOffice(upgradeTime time.Time) bool {
+	if upgradeTime.Day() == 6 || upgradeTime.Day() == 7 {
+		return true
+	}
+	if upgradeTime.UTC().Hour() <= 7 && upgradeTime.UTC().Hour() >= 16 {
+		return true
+	}
+	return false
+}
