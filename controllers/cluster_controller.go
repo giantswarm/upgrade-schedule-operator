@@ -107,6 +107,21 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 		return ctrl.Result{}, err
 	}
 
+	// Send scheduled cluster upgrade announcement.
+	if _, exists := cluster.Annotations[ClusterUpgradeAnnouncement]; !exists {
+		if upgradeAnnouncementTimeReached(upgradeTime) {
+			log.Info("Sending cluster upgrade announcement event.")
+			r.sendClusterUpgradeEvent(cluster, fmt.Sprintf("The cluster %s/%s upgrade from release version %v to %v is scheduled to start at %v minutes.",
+				cluster.Namespace,
+				cluster.Name,
+				getClusterReleaseVersionLabel(cluster),
+				getClusterUpgradeVersionAnnotation(cluster),
+				upgradeTime.Minute()),
+			)
+			cluster.Annotations[ClusterUpgradeAnnouncement] = "true"
+		}
+	}
+
 	// Return if the scheduled upgrade time is not reached yet.
 	if !upgradeTimeReached(upgradeTime) {
 		log.Info(fmt.Sprintf("The scheduled update time is not reached yet. Cluster will be upgraded in %v at %v.", time.Until(upgradeTime).Round(time.Minute), upgradeTime))
@@ -135,6 +150,7 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 	cluster.Labels[label.ReleaseVersion] = getClusterUpgradeVersionAnnotation(cluster)
 	delete(cluster.Annotations, annotation.UpdateScheduleTargetTime)
 	delete(cluster.Annotations, annotation.UpdateScheduleTargetRelease)
+	delete(cluster.Annotations, ClusterUpgradeAnnouncement)
 	err = r.Client.Update(ctx, cluster)
 	if err != nil {
 		log.Error(err, "Failed to update Release version tag and remove scheduled upgrade annotations.")
@@ -158,6 +174,6 @@ func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return nil
 }
 
-func (r *ClusterReconciler) sendClusterUpgradeEvent(cluster *clusterv1.Cluster, sourceVersion, targetVersion string) {
-	r.recorder.Eventf(cluster, corev1.EventTypeNormal, "ClusterUpgradeAnnouncment", "Hello")
+func (r *ClusterReconciler) sendClusterUpgradeEvent(cluster *clusterv1.Cluster, message string) {
+	r.recorder.Eventf(cluster, corev1.EventTypeNormal, "ClusterUpgradeAnnouncement", message)
 }

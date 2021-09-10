@@ -11,6 +11,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+const ClusterUpgradeAnnouncement = "alpha.giantswarm.io/update-schedule-upgrade-announcement"
+
 func defaultRequeue() reconcile.Result {
 	return ctrl.Result{
 		Requeue:      true,
@@ -51,5 +53,6 @@ func upgradeTimeReached(upgradeTime time.Time) bool {
 	return upgradeTime.Before(time.Now())
 }
 
-func sendClusterUpgradeEvent(cluster *clusterv1.Cluster, sourceVersion, targetVersion string) {
+func upgradeAnnouncementTimeReached(upgradeTime time.Time) bool {
+	return upgradeTime.Add(-15 * time.Minute).Before(time.Now())
 }
