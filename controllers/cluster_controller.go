@@ -110,6 +110,12 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 	// Send scheduled cluster upgrade announcement.
 	if _, exists := cluster.Annotations[ClusterUpgradeAnnouncement]; !exists {
 		if upgradeAnnouncementTimeReached(upgradeTime) {
+			cluster.Annotations[ClusterUpgradeAnnouncement] = "true"
+			err = r.Client.Update(ctx, cluster)
+			if err != nil {
+				log.Error(err, "Failed to set upgrade announcement annotation.")
+				return ctrl.Result{}, err
+			}
 			log.Info("Sending cluster upgrade announcement event.")
 			r.sendClusterUpgradeEvent(cluster, fmt.Sprintf("The cluster %s/%s upgrade from release version %v to %v is scheduled to start in %v.",
 				cluster.Namespace,
@@ -118,12 +124,6 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 				getClusterUpgradeVersionAnnotation(cluster),
 				upgradeTime.Sub(time.Now().UTC()).Round(time.Minute),
 			))
-			cluster.Annotations[ClusterUpgradeAnnouncement] = "true"
-			err = r.Client.Update(ctx, cluster)
-			if err != nil {
-				log.Error(err, "Failed to set upgrade announcement annotation.")
-				return ctrl.Result{}, err
-			}
 		}
 	}
 
