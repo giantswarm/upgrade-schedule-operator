@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/blang/semver"
@@ -49,7 +48,5 @@ func upgradeApplied(targetVersion semver.Version, currentVersion semver.Version)
 }
 
 func upgradeTimeReached(upgradeTime time.Time) bool {
-	fmt.Printf("current time: %v", time.Now())
-	fmt.Printf("target time: %v", upgradeTime)
 	return upgradeTime.Before(time.Now())
 }
