@@ -111,13 +111,13 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 	if _, exists := cluster.Annotations[ClusterUpgradeAnnouncement]; !exists {
 		if upgradeAnnouncementTimeReached(upgradeTime) {
 			log.Info("Sending cluster upgrade announcement event.")
-			r.sendClusterUpgradeEvent(cluster, fmt.Sprintf("The cluster %s/%s upgrade from release version %v to %v is scheduled to start at %v minutes.",
+			r.sendClusterUpgradeEvent(cluster, fmt.Sprintf("The cluster %s/%s upgrade from release version %v to %v is scheduled to start in %v.",
 				cluster.Namespace,
 				cluster.Name,
 				getClusterReleaseVersionLabel(cluster),
 				getClusterUpgradeVersionAnnotation(cluster),
-				upgradeTime.Minute()),
-			)
+				time.Until(upgradeTime).Round(time.Minute),
+			))
 			cluster.Annotations[ClusterUpgradeAnnouncement] = "true"
 		}
 	}
