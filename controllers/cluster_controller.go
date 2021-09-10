@@ -119,6 +119,11 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 				time.Until(upgradeTime).Round(time.Minute),
 			))
 			cluster.Annotations[ClusterUpgradeAnnouncement] = "true"
+			err = r.Client.Update(ctx, cluster)
+			if err != nil {
+				log.Error(err, "Failed to set upgrade announcement annotation.")
+				return ctrl.Result{}, err
+			}
 		}
 	}
 
