@@ -50,3 +50,6 @@ func upgradeApplied(targetVersion semver.Version, currentVersion semver.Version)
 func upgradeTimeReached(upgradeTime time.Time) bool {
 	return upgradeTime.Before(time.Now())
 }
+
+func sendClusterUpgradeEvent(cluster *clusterv1.Cluster, sourceVersion, targetVersion string) {
+}
