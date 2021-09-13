@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix out of office check for weekends.
+
 ## [0.1.0] - 2021-09-10
 
 ### Added
