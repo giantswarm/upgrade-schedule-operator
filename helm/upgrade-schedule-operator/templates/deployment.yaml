@@ -31,6 +31,9 @@ spec:
         - /manager
         args:
         - --leader-elect
+        ports:
+        - containerPort: 8080
+          name: metrics
         resources:
           requests:
             cpu: 100m

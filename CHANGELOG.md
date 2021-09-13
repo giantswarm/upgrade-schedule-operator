@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add prometheus metrics about number of attempted, succeeded and failed upgrades.
+
 ### Fixed
 
 - Fix out of office check for weekends.

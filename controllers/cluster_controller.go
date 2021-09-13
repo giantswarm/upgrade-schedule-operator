@@ -24,6 +24,7 @@ import (
 	"github.com/blang/semver"
 	"github.com/giantswarm/apiextensions/v3/pkg/annotation"
 	"github.com/giantswarm/apiextensions/v3/pkg/label"
+	"github.com/giantswarm/upgrade-schedule-operator/metrics"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -161,13 +162,15 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 	delete(cluster.Annotations, annotation.UpdateScheduleTargetTime)
 	delete(cluster.Annotations, annotation.UpdateScheduleTargetRelease)
 	delete(cluster.Annotations, ClusterUpgradeAnnouncement)
+	metrics.UpgradesTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
 	err = r.Client.Update(ctx, cluster)
 	if err != nil {
 		log.Error(err, "Failed to update Release version tag and remove scheduled upgrade annotations.")
+		metrics.FailuresTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
 		return ctrl.Result{}, err
 	}
 	log.Info(fmt.Sprintf("The cluster CR was upgraded from version %v to %v.", currentVersion, targetVersion))
-
+	metrics.SuccessTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
 	return defaultRequeue(), nil
 }
 
