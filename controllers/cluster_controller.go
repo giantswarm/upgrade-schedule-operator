@@ -35,8 +35,6 @@ import (
 	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/giantswarm/upgrade-schedule-operator/metrics"
 )
 
 // ClusterReconciler reconciles a Cluster object
@@ -164,15 +162,15 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 	delete(cluster.Annotations, annotation.UpdateScheduleTargetTime)
 	delete(cluster.Annotations, annotation.UpdateScheduleTargetRelease)
 	delete(cluster.Annotations, ClusterUpgradeAnnouncement)
-	metrics.UpgradesTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
+	UpgradesTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
 	err = r.Client.Update(ctx, cluster)
 	if err != nil {
 		log.Error(err, "Failed to update Release version tag and remove scheduled upgrade annotations.")
-		metrics.FailuresTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
+		FailuresTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
 		return ctrl.Result{}, err
 	}
 	log.Info(fmt.Sprintf("The cluster CR was upgraded from version %v to %v.", currentVersion, targetVersion))
-	metrics.SuccessTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
+	SuccessTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
 	return defaultRequeue(), nil
 }
 
