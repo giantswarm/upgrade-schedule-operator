@@ -24,7 +24,7 @@ import (
 	"github.com/blang/semver"
 	"github.com/giantswarm/apiextensions/v3/pkg/annotation"
 	"github.com/giantswarm/apiextensions/v3/pkg/label"
-	"github.com/giantswarm/upgrade-schedule-operator/metrics"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -35,6 +35,8 @@ import (
 	"sigs.k8s.io/cluster-api/util/annotations"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/giantswarm/upgrade-schedule-operator/metrics"
 )
 
 // ClusterReconciler reconciles a Cluster object
