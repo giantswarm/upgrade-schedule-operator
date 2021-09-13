@@ -12,6 +12,5 @@ metadata:
 spec:
   selector:
     {{- include "labels.selector" . | nindent 4 }}
-spec:
   ports:
     - port: 8081
