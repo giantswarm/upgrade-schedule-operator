@@ -13,4 +13,6 @@ spec:
   selector:
     {{- include "labels.selector" . | nindent 4 }}
   ports:
-    - port: 8081
+  - name: metrics
+    port: 8080
+    targetPort: 8080
