@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added 
+
+- Tests
+
+### Fixed
+
+- Fix out of office time.
+
 ## [0.1.1] - 2021-09-13
 
 ### Fixed
