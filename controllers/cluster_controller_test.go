@@ -178,7 +178,7 @@ func TestClusterController(t *testing.T) {
 						t.Log(event)
 						triggered = true
 					} else {
-						t.Fatalf("test case %v failed. znexpected event %v", tc.name, event)
+						t.Fatalf("test case %v failed. unexpected event %v", tc.name, event)
 					}
 				default:
 					eventsLeft = false
