@@ -62,7 +62,7 @@ func outOfOffice(upgradeTime time.Time) bool {
 	if int(upgradeTime.Weekday()) == 6 || int(upgradeTime.Weekday()) == 0 {
 		return true
 	}
-	if upgradeTime.UTC().Hour() <= 7 && upgradeTime.UTC().Hour() >= 16 {
+	if upgradeTime.UTC().Hour() <= 7 || upgradeTime.UTC().Hour() >= 16 {
 		return true
 	}
 	return false
