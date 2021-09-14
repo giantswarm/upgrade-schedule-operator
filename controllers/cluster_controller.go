@@ -68,34 +68,40 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if apierrors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
+			UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(0)
 			return ctrl.Result{}, nil
 		}
 
 		// Error reading the object - requeue the request.
+		UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(-1)
 		return ctrl.Result{}, err
 	}
 
 	// Return if the Cluster is paused.
 	if annotations.IsPaused(cluster, cluster) {
 		log.Info("The cluster is paused.")
+		UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(0)
 		return defaultRequeue(), nil
 	}
 
 	// Return if the Cluster is deleted.
 	if !cluster.DeletionTimestamp.IsZero() {
 		log.Info("The cluster is deleted.")
+		UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(0)
 		return ctrl.Result{}, nil
 	}
 
 	// Return if there is no upgrade time scheduled.
 	if getClusterUpgradeTimeAnnotation(cluster) == "" {
 		log.Info("The cluster has no upgrade scheduled.")
+		UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(0)
 		return defaultRequeue(), nil
 	}
 
 	// Return if the upgrade release version is not specified.
 	if getClusterUpgradeVersionAnnotation(cluster) == "" {
 		log.Info(fmt.Sprintf("The scheduled update at %v can not proceed because no target release version has been set via annotation %v.", getClusterUpgradeTimeAnnotation(cluster), annotation.UpdateScheduleTargetRelease))
+		UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(0)
 		return defaultRequeue(), nil
 	}
 	return r.ReconcileUpgrade(ctx, cluster, log)
@@ -105,6 +111,7 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 	upgradeTime, err := time.Parse(time.RFC822, getClusterUpgradeTimeAnnotation(cluster))
 	if err != nil {
 		log.Error(err, fmt.Sprintf("Failed to parse cluster upgrade time annotation %v. The value has to be in RFC822 Format and UTC time zone. e.g. 30 Jan 21 15:04 UTC", getClusterUpgradeTimeAnnotation(cluster)))
+		UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(-1)
 		return ctrl.Result{}, err
 	}
 
@@ -115,6 +122,7 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 			err = r.Client.Update(ctx, cluster)
 			if err != nil {
 				log.Error(err, "Failed to set upgrade announcement annotation.")
+				UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(-1)
 				return ctrl.Result{}, err
 			}
 			log.Info("Sending cluster upgrade announcement event.")
@@ -136,51 +144,27 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 	// Return if the scheduled upgrade time is not reached yet.
 	if !upgradeTimeReached(upgradeTime) {
 		log.Info(fmt.Sprintf("The scheduled update time is not reached yet. Cluster will be upgraded in %v at %v.", upgradeTime.Sub(time.Now().UTC()).Round(time.Minute), upgradeTime))
-		UpgradesInfo.WithLabelValues(
-			cluster.Name,
-			cluster.Namespace,
-			getClusterReleaseVersionLabel(cluster),
-			getClusterUpgradeVersionAnnotation(cluster),
-			upgradeTime.String(),
-			"scheduled").Set(float64(upgradeTime.Sub(time.Now().UTC())))
+		UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(float64(upgradeTime.Unix()))
 		return timedRequeue(upgradeTime), nil
 	}
 
 	currentVersion, err := semver.New(getClusterReleaseVersionLabel(cluster))
 	if err != nil {
-		log.Error(err, "Failed to parse current cluster releawse version label.")
-		UpgradesInfo.WithLabelValues(
-			cluster.Name,
-			cluster.Namespace,
-			getClusterReleaseVersionLabel(cluster),
-			getClusterUpgradeVersionAnnotation(cluster),
-			upgradeTime.String(),
-			"error").Set(float64(upgradeTime.Sub(time.Now().UTC())))
+		log.Error(err, "Failed to parse current cluster release version label.")
+		UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(-1)
 		return ctrl.Result{}, err
 	}
 	targetVersion, err := semver.New(getClusterUpgradeVersionAnnotation(cluster))
 	if err != nil {
 		log.Error(err, fmt.Sprintf("Failed to parse cluster upgrade target version annotation %v. The value has to be only the desired release version, e.g 15.2.1.", getClusterUpgradeVersionAnnotation(cluster)))
-		UpgradesInfo.WithLabelValues(
-			cluster.Name,
-			cluster.Namespace,
-			currentVersion.String(),
-			getClusterUpgradeVersionAnnotation(cluster),
-			upgradeTime.String(),
-			"error").Set(float64(upgradeTime.Sub(time.Now().UTC())))
+		UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(-1)
 		return ctrl.Result{}, err
 	}
 
 	// Return if the upgrade to the target release has already been performed.
 	if upgradeApplied(*targetVersion, *currentVersion) {
 		log.Info(fmt.Sprintf("The upgrade to target version %v has already been applied. The current release version is %v.", targetVersion, currentVersion))
-		UpgradesInfo.WithLabelValues(
-			cluster.Name,
-			cluster.Namespace,
-			currentVersion.String(),
-			targetVersion.String(),
-			upgradeTime.String(),
-			"applied").Set(float64(upgradeTime.Sub(time.Now().UTC())))
+		UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(0)
 		return defaultRequeue(), nil
 	}
 
@@ -195,24 +179,12 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 	if err != nil {
 		log.Error(err, "Failed to update Release version tag and remove scheduled upgrade annotations.")
 		FailuresTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
-		UpgradesInfo.WithLabelValues(
-			cluster.Name,
-			cluster.Namespace,
-			currentVersion.String(),
-			targetVersion.String(),
-			upgradeTime.String(),
-			"error").Set(float64(upgradeTime.Sub(time.Now().UTC())))
+		UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(-1)
 		return ctrl.Result{}, err
 	}
 	log.Info(fmt.Sprintf("The cluster CR was upgraded from version %v to %v.", currentVersion, targetVersion))
 	SuccessTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
-	UpgradesInfo.WithLabelValues(
-		cluster.Name,
-		cluster.Namespace,
-		currentVersion.String(),
-		targetVersion.String(),
-		upgradeTime.String(),
-		"applied").Set(float64(upgradeTime.Sub(time.Now().UTC())))
+	UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(0)
 	return defaultRequeue(), nil
 }
 
