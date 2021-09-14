@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add prometheus metrics about number of attempted, succeeded and failed upgrades.
+- Add prometheus metrics about upgrade time of all clusters.
+
+## [0.1.1] - 2021-09-13
 
 ### Fixed
 
@@ -25,5 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Upgrade-Schedule-Operator.
 
 
-[Unreleased]: https://github.com/giantswarm/upgrade-schedule-operator/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/giantswarm/upgrade-schedule-operator/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/giantswarm/upgrade-schedule-operator/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/giantswarm/upgrade-schedule-operator/releases/tag/v0.1.0
