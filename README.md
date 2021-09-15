@@ -6,11 +6,11 @@ This operator is intended to automate scheduling, triggering and notification fo
 
 ## prerequisites
 
-Running this operator alone will enable the automatic scheduling and triggering of upgrades on a management cluster in any provider.
+Running this operator alone on a management cluster will enable the automatic scheduling and triggering of upgrades of workload clusters in any provider.
 However, on AWS, we use the following components together for observability and avoiding errors:
 
 - [`event-exporter-app`](https://github.com/giantswarm/event-exporter-app) for exporting the upgrade events and notifying stakeholders in their slack channel.
-  This requires adding a token for the slack channels to the MC config if it is not there yet.
+  This requires adding a token for the slack channels (using `Giant Swarm Cluster Upgrade` app in slack) to the MC config if it is not there yet.
 - [`aws-admission-controller`](https://github.com/giantswarm/aws-admission-controller) to validate the format of the upgrade annotations.
   This could be added to another validating webhook.
 - [`cluster-operator`](https://github.com/giantswarm/cluster-operator) that carries out the actual upgrading process and emits upgrade events on the cluster.
@@ -27,6 +27,7 @@ annotations:
 Please note that the release version has to be an existing release higher than the current release version.
 The time has to be given in RFC822 format and UTC.
 Furthermore, only times that are at least 16 minutes in the future but not more than 6 months are accepted.
+(16 minutes to ensure that a notification about the upgrade can be sent in advance)
 
 ## what happens next
 
