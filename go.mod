@@ -7,6 +7,7 @@ require (
 	github.com/giantswarm/apiextensions/v3 v3.33.0
 	github.com/go-logr/logr v0.4.0
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/client_golang v1.11.0
 	github.com/stretchr/testify v1.7.0
 	k8s.io/api v0.22.1
 	k8s.io/apimachinery v0.22.1

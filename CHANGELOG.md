@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+### Added
+
+- Add prometheus metrics about number of attempted, succeeded and failed upgrades.
+- Add prometheus metrics about upgrade time of all clusters.
+
 ### Added 
 
 - Tests
