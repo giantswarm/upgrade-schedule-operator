@@ -135,7 +135,7 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 				upgradeTime.Sub(time.Now().UTC()).Round(time.Minute),
 			)
 			if outOfOffice(upgradeTime) {
-				msg += "Please contact us via urgent@giantswarm.io in case of annormalies."
+				msg += " Please contact us via urgent@giantswarm.io in case of annormalies."
 			}
 			r.sendClusterUpgradeEvent(cluster, msg)
 		}
