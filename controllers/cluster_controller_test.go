@@ -30,19 +30,19 @@ func init() {
 
 func TestClusterController(t *testing.T) {
 	testCases := []struct {
-		name                   string
-		expectedReleaseVersion string
-		expectedEventTriggered bool
-		annotationsKept        bool
+		name                        string
+		expectedReleaseVersion      string
+		expectedEventTriggeredCount int
+		annotationsKept             bool
 
 		cluster *v1alpha3.Cluster
 	}{
 		// event triggered, within office time
 		{
-			name:                   "case 0",
-			expectedReleaseVersion: "15.2.1",
-			annotationsKept:        false,
-			expectedEventTriggered: true,
+			name:                        "case 0",
+			expectedReleaseVersion:      "15.2.1",
+			annotationsKept:             false,
+			expectedEventTriggeredCount: 2,
 			cluster: &v1alpha3.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
@@ -63,10 +63,10 @@ func TestClusterController(t *testing.T) {
 		},
 		// event triggered, weekend
 		{
-			name:                   "case 1",
-			expectedReleaseVersion: "15.2.1",
-			expectedEventTriggered: true,
-			annotationsKept:        false,
+			name:                        "case 1",
+			expectedReleaseVersion:      "15.2.1",
+			expectedEventTriggeredCount: 2,
+			annotationsKept:             false,
 			cluster: &v1alpha3.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
@@ -87,10 +87,10 @@ func TestClusterController(t *testing.T) {
 		},
 		// event triggered, out of office time
 		{
-			name:                   "case 2",
-			expectedReleaseVersion: "15.2.1",
-			expectedEventTriggered: true,
-			annotationsKept:        false,
+			name:                        "case 2",
+			expectedReleaseVersion:      "15.2.1",
+			expectedEventTriggeredCount: 2,
+			annotationsKept:             false,
 			cluster: &v1alpha3.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
@@ -111,10 +111,10 @@ func TestClusterController(t *testing.T) {
 		},
 		// future event, no change
 		{
-			name:                   "case 3",
-			expectedReleaseVersion: "14.2.2",
-			expectedEventTriggered: false,
-			annotationsKept:        true,
+			name:                        "case 3",
+			expectedReleaseVersion:      "14.2.2",
+			expectedEventTriggeredCount: 0,
+			annotationsKept:             true,
 			cluster: &v1alpha3.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test2",
@@ -133,13 +133,37 @@ func TestClusterController(t *testing.T) {
 				},
 			},
 		},
+		// invalid "upgrade"
+		{
+			name:                        "case 3",
+			expectedReleaseVersion:      "14.2.2",
+			expectedEventTriggeredCount: 1,
+			annotationsKept:             true,
+			cluster: &v1alpha3.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "default",
+					Labels: map[string]string{
+						"cluster-operator.giantswarm.io/version": "3.7.0",
+						"cluster.x-k8s.io/cluster-name":          "ga83x",
+						"giantswarm.io/cluster":                  "ga83x",
+						"giantswarm.io/organization":             "giantswarm",
+						"release.giantswarm.io/version":          "14.2.2",
+					},
+					Annotations: map[string]string{
+						"alpha.giantswarm.io/update-schedule-target-release": "14.2.0",
+						"alpha.giantswarm.io/update-schedule-target-time":    "13 Sep 21 19:00 UTC",
+					},
+				},
+			},
+		},
 	}
 
 	for i, tc := range testCases {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 
 			fakeClient := fake.NewClientBuilder().WithScheme(fakeScheme).WithObjects(tc.cluster).Build()
-			fakeRecorder := record.NewFakeRecorder(1)
+			fakeRecorder := record.NewFakeRecorder(2)
 			r := &ClusterReconciler{
 				Client:   fakeClient,
 				Scheme:   fakeScheme,
@@ -170,13 +194,13 @@ func TestClusterController(t *testing.T) {
 				t.Fatalf("update schedule target time annotation expected to be %v, got %v", tc.annotationsKept, obj.Annotations["alpha.giantswarm.io/update-schedule-target-release"])
 			}
 
-			triggered := false
+			triggeredCount := 0
 			for eventsLeft := true; eventsLeft; {
 				select {
 				case event := <-fakeRecorder.Events:
 					if strings.Contains(event, "ClusterUpgradeAnnouncement") {
 						t.Log(event)
-						triggered = true
+						triggeredCount++
 					} else {
 						t.Fatalf("test case %v failed. unexpected event %v", tc.name, event)
 					}
@@ -184,7 +208,7 @@ func TestClusterController(t *testing.T) {
 					eventsLeft = false
 				}
 			}
-			assert.Equal(t, tc.expectedEventTriggered, triggered, "test case %v failed.", tc.name)
+			assert.Equal(t, tc.expectedEventTriggeredCount, triggeredCount, "test case %v failed.", tc.name)
 		})
 	}
 }

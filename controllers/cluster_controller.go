@@ -135,7 +135,7 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 				upgradeTime.Sub(time.Now().UTC()).Round(time.Minute),
 			)
 			if outOfOffice(upgradeTime) {
-				msg += " Please contact us via urgent@giantswarm.io in case of anomalies."
+				msg += fmt.Sprintf(" Please contact us via %s in case of anomalies.", OutOfHoursContact)
 			}
 			r.sendClusterUpgradeEvent(cluster, msg)
 		}
@@ -185,6 +185,20 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 	log.Info(fmt.Sprintf("The cluster CR was upgraded from version %v to %v.", currentVersion, targetVersion))
 	SuccessTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
 	UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(0)
+
+	log.Info("Sending cluster upgrade announcement event.")
+
+	msg := fmt.Sprintf("The cluster %s/%s upgrade from release version %v to %v has completed.",
+		cluster.Namespace,
+		cluster.Name,
+		currentVersion,
+		targetVersion,
+	)
+	if outOfOffice(upgradeTime) {
+		msg += fmt.Sprintf(" Please contact us via %s in case of anomalies.", OutOfHoursContact)
+	}
+	r.sendClusterUpgradeEvent(cluster, msg)
+
 	return defaultRequeue(), nil
 }
 
