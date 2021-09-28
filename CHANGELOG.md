@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated out of hours email contact.
+
 ## [0.2.0] - 2021-09-15
 
 
@@ -18,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add prometheus metrics about upgrade time of all clusters.
 - Added documentation in the `README.md` file.
 
-### Added 
+### Added
 
 - Tests
 
