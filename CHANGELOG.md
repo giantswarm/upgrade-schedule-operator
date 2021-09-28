@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2021-09-28
+
 ### Changed
 
 - Updated out of hours email contact.
@@ -44,7 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Upgrade-Schedule-Operator.
 
 
-[Unreleased]: https://github.com/giantswarm/upgrade-schedule-operator/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/giantswarm/upgrade-schedule-operator/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/giantswarm/upgrade-schedule-operator/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/giantswarm/upgrade-schedule-operator/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/giantswarm/upgrade-schedule-operator/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/giantswarm/upgrade-schedule-operator/releases/tag/v0.1.0
