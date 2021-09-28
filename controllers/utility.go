@@ -11,7 +11,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const ClusterUpgradeAnnouncement = "alpha.giantswarm.io/update-schedule-upgrade-announcement"
+const (
+	ClusterUpgradeAnnouncement = "alpha.giantswarm.io/update-schedule-upgrade-announcement"
+	OutOfHoursContact          = "kaascloud@giantswarm.io"
+)
 
 func defaultRequeue() reconcile.Result {
 	return ctrl.Result{
