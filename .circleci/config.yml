@@ -65,7 +65,7 @@ workflows:
             tags:
               only: /^v.*/
 
-      - architect/push-to-aws-app-collection:
+      - architect/push-to-app-collection:
           context: "architect"
           name: push-upgrade-schedule-operator-to-aws-app-collection
           app_name: "upgrade-schedule-operator"
@@ -79,7 +79,7 @@ workflows:
             tags:
               only: /^v.*/
 
-      - architect/push-to-azure-app-collection:
+      - architect/push-to-app-collection:
           context: "architect"
           name: push-upgrade-schedule-operator-to-azure-app-collection
           app_name: "upgrade-schedule-operator"
