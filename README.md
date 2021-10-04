@@ -11,7 +11,9 @@ However, on AWS, we use the following components together for observability and 
 
 - [`event-exporter-app`](https://github.com/giantswarm/event-exporter-app) for exporting the upgrade events and notifying stakeholders in their slack channel.
   This requires adding a token for the slack channels (using `Giant Swarm Cluster Upgrade` app in slack) to the MC config if it is not there yet.
-- [`aws-admission-controller`](https://github.com/giantswarm/aws-admission-controller) to validate the format of the upgrade annotations.
+- [`aws-admission-controller`](https://github.com/giantswarm/aws-admission-controller) (AWS MCs only) to validate the format of the upgrade annotations.
+  This could be added to another validating webhook.
+- [`azure-admission-controller`](https://github.com/giantswarm/azure-admission-controller) (Azure MCs only) to validate the format of the upgrade annotations.
   This could be added to another validating webhook.
 - [`cluster-operator`](https://github.com/giantswarm/cluster-operator) that carries out the actual upgrading process and emits upgrade events on the cluster.
   This could be added to another controller.
@@ -22,7 +24,7 @@ To schedule your upgrade, simply add the following annotations to the `Cluster` 
 ```
 annotations:
   alpha.giantswarm.io/update-schedule-target-release: 15.2.1
-  alpha.giantswarm.io/update-schedule-target-time: "15 Sep 21 08:00 UTC"
+  alpha.giantswarm.io/update-schedule-target-time: "05 Sep 21 08:00 UTC"
 ```
 Please note that the release version has to be an existing release higher than the current release version.
 The time has to be given in RFC822 format and UTC.
