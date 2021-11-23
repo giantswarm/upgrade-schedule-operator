@@ -61,8 +61,7 @@ func upgradeAnnouncementTimeReached(upgradeTime time.Time) bool {
 }
 
 func outOfOffice(upgradeTime time.Time) bool {
-	// Saturday or Sunday, see https://pkg.go.dev/time#Weekday
-	if int(upgradeTime.Weekday()) == 6 || int(upgradeTime.Weekday()) == 0 {
+	if upgradeTime.Weekday() == time.Saturday || upgradeTime.Weekday() == time.Sunday {
 		return true
 	}
 	if upgradeTime.UTC().Hour() <= 7 || upgradeTime.UTC().Hour() >= 16 {
