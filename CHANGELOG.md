@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Fix clearing metrics when cluster is deleted or invalid.
+
 ## [0.3.0] - 2021-10-04
 
 ### Added
