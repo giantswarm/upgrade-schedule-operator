@@ -68,12 +68,12 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if apierrors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
-			UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(0)
+			UpgradesInfo.WithLabelValues(req.Name, req.Namespace).Set(0)
 			return ctrl.Result{}, nil
 		}
 
 		// Error reading the object - requeue the request.
-		UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace).Set(-1)
+		UpgradesInfo.WithLabelValues(req.Name, req.Namespace).Set(-1)
 		return ctrl.Result{}, err
 	}
 
