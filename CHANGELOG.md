@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Upgrade cluster-api to v1.0.4 and use `v1beta1` types.
+- Drop `apiextensions` and use `k8smetadata` for labels and annotations.
+
 ## [0.4.0] - 2022-03-21
 
 ### Added

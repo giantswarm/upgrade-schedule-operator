@@ -14,7 +14,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 
-	"sigs.k8s.io/cluster-api/api/v1alpha3"
+	capi "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -25,7 +25,7 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(fakeScheme))
-	_ = v1alpha3.AddToScheme(fakeScheme)
+	_ = capi.AddToScheme(fakeScheme)
 }
 
 func TestClusterController(t *testing.T) {
@@ -35,7 +35,7 @@ func TestClusterController(t *testing.T) {
 		expectedEventTriggered bool
 		annotationsKept        bool
 
-		cluster *v1alpha3.Cluster
+		cluster *capi.Cluster
 	}{
 		// event triggered, within office time
 		{
@@ -43,7 +43,7 @@ func TestClusterController(t *testing.T) {
 			expectedReleaseVersion: "15.2.1",
 			annotationsKept:        false,
 			expectedEventTriggered: true,
-			cluster: &v1alpha3.Cluster{
+			cluster: &capi.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "default",
@@ -67,7 +67,7 @@ func TestClusterController(t *testing.T) {
 			expectedReleaseVersion: "15.2.1",
 			expectedEventTriggered: true,
 			annotationsKept:        false,
-			cluster: &v1alpha3.Cluster{
+			cluster: &capi.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "default",
@@ -91,7 +91,7 @@ func TestClusterController(t *testing.T) {
 			expectedReleaseVersion: "15.2.1",
 			expectedEventTriggered: true,
 			annotationsKept:        false,
-			cluster: &v1alpha3.Cluster{
+			cluster: &capi.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test",
 					Namespace: "default",
@@ -115,7 +115,7 @@ func TestClusterController(t *testing.T) {
 			expectedReleaseVersion: "14.2.2",
 			expectedEventTriggered: false,
 			annotationsKept:        true,
-			cluster: &v1alpha3.Cluster{
+			cluster: &capi.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test2",
 					Namespace: "default",
@@ -152,7 +152,7 @@ func TestClusterController(t *testing.T) {
 				t.Error(err)
 			}
 
-			obj := &v1alpha3.Cluster{}
+			obj := &capi.Cluster{}
 			err = fakeClient.Get(ctx, types.NamespacedName{Name: tc.cluster.GetName(), Namespace: tc.cluster.GetNamespace()}, obj)
 			if err != nil {
 				t.Error(err)
