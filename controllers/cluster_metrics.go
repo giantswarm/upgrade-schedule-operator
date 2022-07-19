@@ -45,7 +45,7 @@ var (
 
 // Gauge for all clusters scheduled upgrade time
 var (
-	infoLabels = []string{"cluster_id", "cluster_namespace"}
+	infoLabels = []string{"cluster_id", "cluster_namespace", "origin_version", "target_version"}
 
 	UpgradesInfo = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
