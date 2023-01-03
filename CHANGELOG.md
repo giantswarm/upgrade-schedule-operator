@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed scraping port in annotation for monitoring.
+
 ## [0.6.0] - 2022-07-19
 
 ### Changed
