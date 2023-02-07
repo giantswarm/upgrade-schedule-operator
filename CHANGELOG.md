@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added the use of the runtime/default seccomp profile.
+
 ## [0.6.1] - 2023-01-03
 
 ### Fixed
