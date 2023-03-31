@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Allow required volume types in PSP so that pods can be admitted
+
 ## [0.7.0] - 2023-03-31
 
 ### Added

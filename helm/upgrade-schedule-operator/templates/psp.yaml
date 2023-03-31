@@ -25,6 +25,11 @@ spec:
   supplementalGroups:
     rule: RunAsAny
   allowPrivilegeEscalation: false
+  volumes:
+    # Used directly in deployment
+    - secret
+    # Needed for Kubernetes API access (https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/)
+    - projected
   hostNetwork: false
   hostIPC: false
   hostPID: false
