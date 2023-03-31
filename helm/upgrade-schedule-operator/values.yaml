@@ -7,6 +7,9 @@ image:
 registry:
   domain: docker.io
 
+installation:
+  name: name
+
 pod:
   user:
     id: 1000

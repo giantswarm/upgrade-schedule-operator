@@ -13,6 +13,14 @@
                 }
             }
         },
+        "installation": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "pod": {
             "type": "object",
             "properties": {

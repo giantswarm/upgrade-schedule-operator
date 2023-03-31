@@ -34,6 +34,7 @@ spec:
         - /manager
         args:
         - --leader-elect
+        - "--installation={{ .Values.installation.name }}"
         ports:
         - containerPort: 8080
           name: metrics

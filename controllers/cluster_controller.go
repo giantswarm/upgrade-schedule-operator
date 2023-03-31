@@ -40,8 +40,9 @@ import (
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log          logr.Logger
+	Scheme       *runtime.Scheme
+	Installation string
 
 	recorder record.EventRecorder
 }
@@ -127,9 +128,10 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 			}
 			log.Info("Sending cluster upgrade announcement event.")
 
-			msg := fmt.Sprintf("The cluster %s/%s upgrade from release version %v to %v is scheduled to start in %v.",
+			msg := fmt.Sprintf("The cluster %s/%s upgrade in %s from release version %v to %v is scheduled to start in %v.",
 				cluster.Namespace,
 				cluster.Name,
+				r.Installation,
 				getClusterReleaseVersionLabel(cluster),
 				getClusterUpgradeVersionAnnotation(cluster),
 				upgradeTime.Sub(time.Now().UTC()).Round(time.Minute),
