@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Add `installation` name into reconciler.
+
 ## [0.7.1] - 2023-03-31
 
 ### Fixed
