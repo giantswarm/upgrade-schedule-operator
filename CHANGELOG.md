@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added 
+
+- Added required values for pss policies.
+
 ## [0.7.2] - 2023-04-03
 
 ### Fixed
