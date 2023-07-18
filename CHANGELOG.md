@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2023-07-13
+
+### Added 
+
+- Added required values for pss policies.
+
+## [0.7.4] - 2023-07-05
+
+### Fixed
+
+- Remove vintage monitoring labels.
+
 ## [0.7.3] - 2023-07-04
 
 ### Fixed
@@ -106,7 +118,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Upgrade-Schedule-Operator.
 
 
-[Unreleased]: https://github.com/giantswarm/upgrade-schedule-operator/compare/v0.7.3...HEAD
+[Unreleased]: https://github.com/giantswarm/upgrade-schedule-operator/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/giantswarm/upgrade-schedule-operator/compare/v0.7.4...v0.8.0
+[0.7.4]: https://github.com/giantswarm/upgrade-schedule-operator/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/giantswarm/upgrade-schedule-operator/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/giantswarm/upgrade-schedule-operator/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/giantswarm/upgrade-schedule-operator/compare/v0.7.0...v0.7.1
