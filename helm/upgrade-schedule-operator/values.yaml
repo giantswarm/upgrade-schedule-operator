@@ -5,7 +5,7 @@ image:
   name: "giantswarm/upgrade-schedule-operator"
   tag: "[[ .Version ]]"
 registry:
-  domain: docker.io
+  domain: gsoci.azurecr.io
 
 installation:
   name: name
@@ -32,4 +32,4 @@ securityContext:
     type: RuntimeDefault
   capabilities:
     drop:
-    - ALL
+      - ALL
