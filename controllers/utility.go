@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"strings"
 	"time"
 
 	"github.com/blang/semver"
@@ -41,11 +40,11 @@ func getClusterReleaseVersionLabel(cluster *clusterv1.Cluster) string {
 
 func isCAPIProvider(cluster *clusterv1.Cluster) bool {
 	labels := cluster.GetLabels()
-	name, ok := labels[label.AppKubernetesName]
+	name, ok := labels["cluster.x-k8s.io/watch-filter"]
 	if !ok {
 		return false
 	}
-	if strings.Contains(name, "cluster-") {
+	if name == "capi" {
 		return true
 	}
 	return false
