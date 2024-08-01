@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/giantswarm/k8smetadata/pkg/label"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -151,7 +150,7 @@ func TestClusterController(t *testing.T) {
 						"giantswarm.io/cluster":         "dh82p",
 						"giantswarm.io/organization":    "giantswarm",
 						"release.giantswarm.io/version": "25.0.0",
-						label.AppKubernetesName:         "cluster-aws",
+						"cluster.x-k8s.io/watch-filter": "capi",
 					},
 					Annotations: map[string]string{
 						"alpha.giantswarm.io/update-schedule-target-release": "26.0.0",
