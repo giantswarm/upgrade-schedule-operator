@@ -10,11 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.10.1] - 2024-08-01
 
-## [0.10.0] - 2024-08-01
-
 ### Fixed 
 
 - Change label to check CAPI clusters.
+
+## [0.10.0] - 2024-08-01
 
 ### Changed
 
