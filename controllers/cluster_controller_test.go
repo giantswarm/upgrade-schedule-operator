@@ -206,7 +206,10 @@ func TestClusterController(t *testing.T) {
 			ctx := context.TODO()
 
 			if isCAPIProvider(tc.cluster) {
-				fakeClient.Create(ctx, tc.configMap)
+				err := fakeClient.Create(ctx, tc.configMap)
+				if err != nil {
+					t.Error(err)
+				}
 			}
 
 			_, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: tc.cluster.GetName(), Namespace: tc.cluster.GetNamespace()}})
