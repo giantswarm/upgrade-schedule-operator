@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"strings"
 	"time"
 
 	"github.com/blang/semver"
@@ -36,6 +37,18 @@ func timedRequeue(upgradeTime time.Time) reconcile.Result {
 func getClusterReleaseVersionLabel(cluster *clusterv1.Cluster) string {
 	labels := cluster.GetLabels()
 	return labels[label.ReleaseVersion]
+}
+
+func isCAPIProvider(cluster *clusterv1.Cluster) bool {
+	labels := cluster.GetLabels()
+	name, ok := labels[label.AppKubernetesName]
+	if !ok {
+		return false
+	}
+	if strings.Contains(name, "cluster-") {
+		return true
+	}
+	return false
 }
 
 func getClusterUpgradeTimeAnnotation(cluster *clusterv1.Cluster) string {

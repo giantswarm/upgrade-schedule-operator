@@ -60,3 +60,31 @@ workflows:
               ignore: /.*/
             tags:
               only: /^v.*/
+
+      - architect/push-to-app-collection:
+          context: architect
+          name: push-to-capa-app-collection
+          app_name: "upgrade-schedule-operator"
+          app_collection_repo: "capa-app-collection"
+          requires:
+            - push-upgrade-schedule-operator-to-app-catalog
+            - push-to-registries
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+
+      - architect/push-to-app-collection:
+          context: architect
+          name: push-to-capz-app-collection
+          app_name: "upgrade-schedule-operator"
+          app_collection_repo: "capz-app-collection"
+          requires:
+            - push-upgrade-schedule-operator-to-app-catalog
+            - push-to-registries
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/

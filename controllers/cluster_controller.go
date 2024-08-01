@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/blang/semver"
@@ -30,6 +31,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/cluster-api/util/annotations"
@@ -172,21 +174,53 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 
 	// Apply the upgrade and remove annotations
 	log.Info(fmt.Sprintf("The cluster will be upgraded from version %v to %v.", currentVersion, targetVersion))
-	cluster.Labels[label.ReleaseVersion] = getClusterUpgradeVersionAnnotation(cluster)
+	if isCAPIProvider(cluster) {
+		cm := &corev1.ConfigMap{}
+		// Retrieve the existing ConfigMap
+		err := r.Client.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("%s-userconfig", cluster.GetName()), Namespace: cluster.GetNamespace()}, cm)
+		if err != nil {
+			log.Error(err, "Failed to get userconfig configmap from cluster.")
+			FailuresTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
+			UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Set(-1)
+			return ctrl.Result{}, err
+		}
+
+		// Extract the values field and replace the current version with the target version
+		values := cm.Data["values"]
+		values = strings.Replace(values, fmt.Sprintf("version: %s", currentVersion.String()), fmt.Sprintf("version: %s", targetVersion.String()), -1)
+		cm.Data["values"] = values
+
+		err = r.Client.Update(ctx, cm)
+		if err != nil {
+			log.Error(err, "Failed to update release version tag and remove scheduled upgrade annotations.")
+			FailuresTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
+			UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Set(-1)
+			return ctrl.Result{}, err
+		}
+
+		log.Info(fmt.Sprintf("The configmap was modified, changed release version %v to %v.", currentVersion, targetVersion))
+	}
+
+	if !isCAPIProvider(cluster) {
+		cluster.Labels[label.ReleaseVersion] = getClusterUpgradeVersionAnnotation(cluster)
+	}
+
 	delete(cluster.Annotations, annotation.UpdateScheduleTargetTime)
 	delete(cluster.Annotations, annotation.UpdateScheduleTargetRelease)
 	delete(cluster.Annotations, ClusterUpgradeAnnouncement)
+
 	UpgradesTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
 	err = r.Client.Update(ctx, cluster)
 	if err != nil {
-		log.Error(err, "Failed to update Release version tag and remove scheduled upgrade annotations.")
+		log.Error(err, "Failed to update release version tag and remove scheduled upgrade annotations.")
 		FailuresTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
 		UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Set(-1)
 		return ctrl.Result{}, err
 	}
-	log.Info(fmt.Sprintf("The cluster CR was upgraded from version %v to %v.", currentVersion, targetVersion))
+	log.Info(fmt.Sprintf("The cluster CR was modified, changed release version %v to %v.", currentVersion, targetVersion))
 	SuccessTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
 	UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Set(0)
+
 	return defaultRequeue(), nil
 }
 

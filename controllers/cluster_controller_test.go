@@ -2,11 +2,14 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/giantswarm/k8smetadata/pkg/label"
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -35,7 +38,8 @@ func TestClusterController(t *testing.T) {
 		expectedEventTriggered bool
 		annotationsKept        bool
 
-		cluster *capi.Cluster
+		cluster   *capi.Cluster
+		configMap *corev1.ConfigMap
 	}{
 		// event triggered, within office time
 		{
@@ -133,11 +137,64 @@ func TestClusterController(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:                   "case 4",
+			expectedReleaseVersion: "26.0.0",
+			expectedEventTriggered: true,
+			annotationsKept:        false,
+			cluster: &capi.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test3",
+					Namespace: "org-giantswarm",
+					Labels: map[string]string{
+						"cluster.x-k8s.io/cluster-name": "dh82p",
+						"giantswarm.io/cluster":         "dh82p",
+						"giantswarm.io/organization":    "giantswarm",
+						"release.giantswarm.io/version": "25.0.0",
+						label.AppKubernetesName:         "cluster-aws",
+					},
+					Annotations: map[string]string{
+						"alpha.giantswarm.io/update-schedule-target-release": "26.0.0",
+						"alpha.giantswarm.io/update-schedule-target-time":    "31 Jul 24 14:00 UTC",
+					},
+				},
+			},
+			configMap: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test3-userconfig",
+					Namespace: "org-giantswarm",
+				},
+				Data: map[string]string{
+					"values": `
+					global:
+					  connectivity:
+						availabilityZoneUsageLimit: 3
+						network: {}
+						topology: {}
+					  controlPlane: {}
+					  metadata:
+						description: Franco tests things from the bundle
+						name: franco055
+						organization: giantswarm
+						preventDeletion: false
+					  nodePools:
+						nodepool0:
+						  instanceType: m5.xlarge
+						  maxSize: 10
+						  minSize: 3
+						  rootVolumeSizeGB: 8
+					  providerSpecific: {}
+					  release:
+					  	version: 25.0.0
+					`,
+				},
+			},
+		},
 	}
 
 	for i, tc := range testCases {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-
+			t.Log(tc.name)
 			fakeClient := fake.NewClientBuilder().WithScheme(fakeScheme).WithObjects(tc.cluster).Build()
 			fakeRecorder := record.NewFakeRecorder(1)
 			r := &ClusterReconciler{
@@ -147,6 +204,14 @@ func TestClusterController(t *testing.T) {
 				recorder: fakeRecorder,
 			}
 			ctx := context.TODO()
+
+			if isCAPIProvider(tc.cluster) {
+				err := fakeClient.Create(ctx, tc.configMap)
+				if err != nil {
+					t.Error(err)
+				}
+			}
+
 			_, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: types.NamespacedName{Name: tc.cluster.GetName(), Namespace: tc.cluster.GetNamespace()}})
 			if err != nil {
 				t.Error(err)
@@ -158,8 +223,19 @@ func TestClusterController(t *testing.T) {
 				t.Error(err)
 			}
 
-			if obj.Labels["release.giantswarm.io/version"] != tc.expectedReleaseVersion {
-				t.Fatalf("expected release.giantswarm.io/version to be %v, got %s", tc.expectedReleaseVersion, obj.Labels["release.giantswarm.io/version"])
+			if isCAPIProvider(tc.cluster) {
+				cm := &corev1.ConfigMap{}
+				err = fakeClient.Get(ctx, types.NamespacedName{Name: tc.configMap.GetName(), Namespace: tc.configMap.GetNamespace()}, cm)
+				if err != nil {
+					t.Error(err)
+				}
+				if !strings.Contains(cm.Data["values"], fmt.Sprintf("version: %s", tc.expectedReleaseVersion)) {
+					t.Fatalf("expected release to be %v, got %s", tc.expectedReleaseVersion, cm.Data["values"])
+				}
+			} else {
+				if obj.Labels["release.giantswarm.io/version"] != tc.expectedReleaseVersion {
+					t.Fatalf("expected release.giantswarm.io/version to be %v, got %s", tc.expectedReleaseVersion, obj.Labels["release.giantswarm.io/version"])
+				}
 			}
 
 			if _, exists := obj.Annotations["alpha.giantswarm.io/update-schedule-target-release"]; exists != tc.annotationsKept {
