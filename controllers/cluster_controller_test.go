@@ -225,7 +225,10 @@ func TestClusterController(t *testing.T) {
 
 			if isCAPIProvider(tc.cluster) {
 				cm := &corev1.ConfigMap{}
-				fakeClient.Get(ctx, types.NamespacedName{Name: tc.configMap.GetName(), Namespace: tc.configMap.GetNamespace()}, cm)
+				err = fakeClient.Get(ctx, types.NamespacedName{Name: tc.configMap.GetName(), Namespace: tc.configMap.GetNamespace()}, cm)
+				if err != nil {
+					t.Error(err)
+				}
 				if !strings.Contains(cm.Data["values"], fmt.Sprintf("version: %s", tc.expectedReleaseVersion)) {
 					t.Fatalf("expected release to be %v, got %s", tc.expectedReleaseVersion, cm.Data["values"])
 				}
