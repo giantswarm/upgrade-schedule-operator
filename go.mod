@@ -2,7 +2,7 @@ module github.com/giantswarm/upgrade-schedule-operator
 
 go 1.22.0
 
-toolchain go1.22.5
+toolchain go1.22.6
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
