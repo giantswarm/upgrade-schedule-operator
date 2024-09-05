@@ -1,2 +1,2 @@
-# pkg:golang/google.golang.org/protobuf@v1.32.0
-CVE-2024-24786
+# pkg:golang/golang.org/x/net@v0.27.0
+CVE-2024-8421
