@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Disable logger development mode to avoid panicking, use zap as logger.
+
 ## [0.10.1] - 2024-08-01
 
 ### Fixed 
