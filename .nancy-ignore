@@ -1,2 +1,2 @@
-# pkg:golang/golang.org/x/net@v0.27.0
-CVE-2024-8421
+# pkg:golang/golang.org/x/net@v0.32.0
+CVE-2024-45338
