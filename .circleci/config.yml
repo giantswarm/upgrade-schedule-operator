@@ -24,6 +24,7 @@ workflows:
       - architect/push-to-app-catalog:
           context: "architect"
           name: push-upgrade-schedule-operator-to-app-catalog
+          executor: app-build-suite
           app_catalog: "control-plane-catalog"
           app_catalog_test: "control-plane-test-catalog"
           chart: "upgrade-schedule-operator"
@@ -32,6 +33,8 @@ workflows:
           filters:
             tags:
               only: /^v.*/
+            branches:
+              only: /.*/
 
       - architect/push-to-app-collection:
           context: "architect"
