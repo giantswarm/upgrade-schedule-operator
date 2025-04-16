@@ -68,7 +68,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// Fetch the Cluster instance.
 	cluster := &clusterv1.Cluster{}
-	if err := r.Client.Get(ctx, req.NamespacedName, cluster); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, cluster); err != nil {
 		if apierrors.IsNotFound(err) {
 			// Object not found, return.  Created objects are automatically garbage collected.
 			// For additional cleanup logic use finalizers.
@@ -123,7 +123,7 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 	if _, exists := cluster.Annotations[ClusterUpgradeAnnouncement]; !exists {
 		if upgradeAnnouncementTimeReached(upgradeTime) {
 			cluster.Annotations[ClusterUpgradeAnnouncement] = "true"
-			err = r.Client.Update(ctx, cluster)
+			err = r.Update(ctx, cluster)
 			if err != nil {
 				log.Error(err, "Failed to set upgrade announcement annotation.")
 				UpgradesInfo.WithLabelValues(cluster.Name, cluster.Namespace, "", "").Set(-1)
@@ -178,7 +178,7 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 	if isCAPIProvider(cluster) {
 		cm := &corev1.ConfigMap{}
 		// Retrieve the existing ConfigMap
-		err := r.Client.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("%s-userconfig", cluster.GetName()), Namespace: cluster.GetNamespace()}, cm)
+		err := r.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("%s-userconfig", cluster.GetName()), Namespace: cluster.GetNamespace()}, cm)
 		if err != nil {
 			log.Error(err, "Failed to get userconfig configmap from cluster.")
 			FailuresTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
@@ -188,10 +188,10 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 
 		// Extract the values field and replace the current version with the target version
 		values := cm.Data["values"]
-		values = strings.Replace(values, fmt.Sprintf("version: %s", currentVersion.String()), fmt.Sprintf("version: %s", targetVersion.String()), -1)
+		values = strings.ReplaceAll(values, fmt.Sprintf("version: %s", currentVersion.String()), fmt.Sprintf("version: %s", targetVersion.String()))
 		cm.Data["values"] = values
 
-		err = r.Client.Update(ctx, cm)
+		err = r.Update(ctx, cm)
 		if err != nil {
 			log.Error(err, "Failed to update release version tag and remove scheduled upgrade annotations.")
 			FailuresTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
@@ -211,7 +211,7 @@ func (r *ClusterReconciler) ReconcileUpgrade(ctx context.Context, cluster *clust
 	delete(cluster.Annotations, ClusterUpgradeAnnouncement)
 
 	UpgradesTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
-	err = r.Client.Update(ctx, cluster)
+	err = r.Update(ctx, cluster)
 	if err != nil {
 		log.Error(err, "Failed to update release version tag and remove scheduled upgrade annotations.")
 		FailuresTotal.WithLabelValues(cluster.Name, cluster.Namespace, currentVersion.String(), targetVersion.String()).Inc()
