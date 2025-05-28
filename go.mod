@@ -5,7 +5,7 @@ go 1.24.3
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/giantswarm/k8smetadata v0.25.0
-	github.com/go-logr/logr v1.4.2
+	github.com/go-logr/logr v1.4.3
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.22.0
 	github.com/stretchr/testify v1.10.0
