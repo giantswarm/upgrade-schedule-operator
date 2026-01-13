@@ -1,9 +1,11 @@
+apiVersion: v2
 name: upgrade-schedule-operator
-version: [[ .Version ]]
-description: "Operator for managing scheduled updates for a cluster"
-appVersion: "[[ .AppVersion ]]"
-home: "https://github.com/giantswarm/upgrade-schedule-operator"
-apiVersion: v1
+version: 0.10.2-dev
+description: Operator for managing scheduled updates for a cluster
+appVersion: 0.10.2-dev
+home: https://github.com/giantswarm/upgrade-schedule-operator
+icon: https://s.giantswarm.io/app-icons/giantswarm/1/dark.svg
 annotations:
-  application.giantswarm.io/team: "phoenix"
+  application.giantswarm.io/team: phoenix
+  io.giantswarm.application.team: phoenix
   config.giantswarm.io/version: 1.x.x
